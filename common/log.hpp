@@ -57,7 +57,7 @@ public:
             }
 
             // 2. 设置统一的日志格式，包含源文件和行号 (%@)
-            logger_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%s:%#] %v");
+            logger_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
             
             // 3. 注册 logger，以便全局访问
             spdlog::register_logger(logger_); });
