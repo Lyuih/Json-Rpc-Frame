@@ -3,6 +3,7 @@
 #include <memory>
 #include <sstream>
 #include <json/json.h>
+#include "log.hpp"
 class JsonUtil
 {
 public:
@@ -22,7 +23,8 @@ public:
         int ret = sw->write(root, &ss);
         if (ret < 0)
         {
-            std::cout << "序列化失败" << std::endl;
+            // std::cout << "序列化失败" << std::endl;
+            LOG_ERROR("序列化失败");
             return false;
         }
         str = ss.str();
@@ -42,7 +44,8 @@ public:
         bool ret = cr->parse(str.c_str(), str.c_str() + str.size(), &root, nullptr);
         if (!ret)
         {
-            std::cout << "反序列化失败" << std::endl;
+            // std::cout << "反序列化失败" << std::endl;
+            LOG_ERROR("反序列化失败");
             return false;
         }
         return true;
