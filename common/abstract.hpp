@@ -42,7 +42,7 @@ class BaseConnection
 {
 public:
     using ptr = std::shared_ptr<BaseConnection>;
-    virtual bool send(const BaseMessage::ptr &msg) = 0; // 发送BaseMessage消息
+    virtual void send(const BaseMessage::ptr &msg) = 0; // 发送BaseMessage消息
     virtual void shutdown() = 0;                        // 关闭连接
     virtual bool connected() = 0;                       // 检测连接状态
 };
@@ -83,7 +83,7 @@ public:
     virtual void setConnectionCallback(const ConnectionCallback &conn_cb) { conn_callback_ = conn_cb; } // 建立连接时的回调函数
     virtual void setCloseback(const CloseCallback &close_cb) { close_callback_ = close_cb; }            // 关闭连接时的回调
     virtual void setMessageCallback(const MessageCallback &msg_cb) { msg_callback_ = msg_cb; }          // 收到消息时的回调
-    virtual bool connect() = 0;                                                                         // 建立与服务端的连接
+    virtual void connect() = 0;                                                                         // 建立与服务端的连接
     virtual bool send(const BaseMessage::ptr & msg) = 0;                                                    // 发送消息
     virtual void shutdown() = 0;                                                                        // 关闭连接
     virtual bool connected() = 0;                                                                       // 检测连接状态
