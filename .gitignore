@@ -1,3 +1,4 @@
-/client/log/*
-/server/log/*
+*/log/*
+
+
 *.txt
