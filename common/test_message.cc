@@ -546,6 +546,7 @@ TEST(SerializeTest, SerializeTwiceIsSame)
 
 int main(int argc, char **argv)
 {
+    Logger::instance().init(true, "log/log.log", spdlog::level::info);
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
