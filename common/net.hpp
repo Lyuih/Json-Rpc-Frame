@@ -3,6 +3,8 @@
  * 具象层通信部分实现
  */
 #include <memory>
+#include <mutex>
+#include <thread>
 #include <muduo/net/TcpServer.h>
 #include <muduo/net/EventLoop.h>
 #include <muduo/net/TcpConnection.h>
@@ -52,7 +54,7 @@ namespace Lyuih
         }
 
     private:
-        muduo::net::Buffer *buf_; // TODO_ 为什么不用智能智能
+        muduo::net::Buffer *buf_; 
     };
 
     // MuduoBuffer工厂模式
@@ -88,7 +90,7 @@ namespace Lyuih
             int32_t id_len = buf->readInt32();
             std::string id = buf->retrieveAsString(id_len);
             // 2.计算出body长度并提取
-            int32_t body_len = len - lenFieldsLength - mtypeFieldsLength - idlenFieldsLength - id_len;
+            int32_t body_len = len - mtypeFieldsLength - idlenFieldsLength - id_len;
             std::string body = buf->retrieveAsString(body_len);
             // 3.反序列化到msg
             // a.根据类型创建message对象
@@ -117,7 +119,7 @@ namespace Lyuih
             // 1. 将msg序列化获取消息组主体字符串
             std::string body = msg->serialize();
             // 2.提取必要信息,MType,id
-            Lyuih::MType m_type = msg->MType();
+            int32_t m_type = ::htonl((int32_t)msg->MType());
             std::string id = msg->Id();
             // 3. 计算必要信息:length,idlen,并转化为网络字节序
             int32_t id_len = ::htonl(id.size());
@@ -177,12 +179,12 @@ namespace Lyuih
     {
     public:
         using ptr = std::shared_ptr<MuduoConnection>;
-        MuduoConnection(muduo::net::TcpConnectionPtr &conn, BaseProtocol::ptr &protocol)
+        MuduoConnection(const muduo::net::TcpConnectionPtr &conn, const BaseProtocol::ptr &protocol)
             : conn_(conn), protocol_(protocol)
         {
         }
         // 发送BaseMessage消息
-        virtual bool send(const BaseMessage::ptr &msg) override
+        virtual void send(const BaseMessage::ptr &msg) override
         {
             // 通过_protocol序列化消息，使用conn发送消息
             std::string str = protocol_->serialize(msg);
@@ -250,7 +252,8 @@ namespace Lyuih
                 auto conn = ConnectionFactory::create(connectionPtr, protocol_);
                 {
                     // 建立映射
-                    std::unique_lock<std::mutex>(mutex_);
+                    std::unique_lock<std::mutex> lock(mutex_);
+
                     conns_.insert(std::make_pair(connectionPtr, conn));
                 }
                 // 2.调用回调函数
@@ -266,7 +269,7 @@ namespace Lyuih
                 // 1.删除映射
                 BaseConnection::ptr conn;
                 {
-                    std::unique_lock<std::mutex>(mutex_);
+                    std::unique_lock<std::mutex> lock(mutex_);
                     auto it = conns_.find(connectionPtr);
                     if (it == conns_.end())
                     {
@@ -314,7 +317,7 @@ namespace Lyuih
                 // 从conns获取对应的BaseConnection::ptr 调用msg_callback_处理消息
                 BaseConnection::ptr conn;
                 {
-                    std::unique_lock<std::mutex>(mutex_);
+                    std::unique_lock<std::mutex> lock(mutex_);
                     auto it = conns_.find(connectionPtr);
                     if (it == conns_.end())
                     {
@@ -334,12 +337,12 @@ namespace Lyuih
         }
 
     private:
-        const size_t maxDataSize = (1 << 16); // 防止缓冲区溢出
-        BaseProtocol::ptr protocol_;
+        const size_t maxDataSize = (1 << 16);                                         // 防止缓冲区溢出
         muduo::net::EventLoop baseLoop_;                                              // 事件循环，负责监控和处理所有的I/O事件
         muduo::net::TcpServer server_;                                                // Tcp服务器
         std::mutex mutex_;                                                            // 线程安全
         std::unordered_map<muduo::net::TcpConnectionPtr, BaseConnection::ptr> conns_; // 管理线程
+        BaseProtocol::ptr protocol_;
     };
     class ServerFactory
     {
@@ -361,7 +364,7 @@ namespace Lyuih
             ;
         }
         // 建立与服务端的连接
-        virtual bool connect() override
+        virtual void connect() override
         {
             LOG_INFO("建立回调关联");
             client_.setConnectionCallback(std::bind(&MuduoClient::onConnection, this, std::placeholders::_1));
@@ -457,12 +460,13 @@ namespace Lyuih
 
     private:
         const size_t maxDataSize = (1 << 16);    // 最大数据缓冲区大小，防止缓冲区溢出
-        BaseProtocol::ptr protocol_;             // 协议对象指针，用于消息的序列化和反序列化
-        BaseConnection::ptr conn_;               // 连接对象指针，管理与服务器的连接
-        muduo::net::EventLoop *baseloop_;        // 事件循环指针，处理所有的I/O事件
-        muduo::CountDownLatch downlatch_;        // 倒计时锁，用于连接同步，等待连接建立
         muduo::net::EventLoopThread loopthread_; // 事件循环线程，负责管理I/O事件线程
-        muduo::net::TcpClient client_;           // TCP客户端对象，管理与服务器的TCP连接
+
+        BaseConnection::ptr conn_;        // 连接对象指针，管理与服务器的连接
+        muduo::net::EventLoop *baseloop_; // 事件循环指针，处理所有的I/O事件
+        muduo::CountDownLatch downlatch_; // 倒计时锁，用于连接同步，等待连接建立
+        muduo::net::TcpClient client_;    // TCP客户端对象，管理与服务器的TCP连接
+        BaseProtocol::ptr protocol_;      // 协议对象指针，用于消息的序列化和反序列化
     };
 
     class ClientFactory
