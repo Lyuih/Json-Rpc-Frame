@@ -9,7 +9,7 @@
 
 namespace Lyuih
 {
-    namespace Server
+    namespace server
     {
         class Subscriber
         {
