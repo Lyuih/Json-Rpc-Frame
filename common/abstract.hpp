@@ -42,7 +42,7 @@ class BaseConnection
 {
 public:
     using ptr = std::shared_ptr<BaseConnection>;
-    virtual bool send(const BaseMessage::ptr &msg) = 0; // 发送BaseMessage消息
+    virtual void send(const BaseMessage::ptr &msg) = 0; // 发送BaseMessage消息
     virtual void shutdown() = 0;                        // 关闭连接
     virtual bool connected() = 0;                       // 检测连接状态
 };
@@ -52,7 +52,7 @@ class BaseProtocol
 {
 public:
     using ptr = std::shared_ptr<BaseProtocol>;
-    virtual void onMessage(BaseBuffer::ptr &buf, BaseMessage::ptr &msg) = 0; // 从缓冲区解析出BaseMessage对象
+    virtual bool onMessage(BaseBuffer::ptr &buf, BaseMessage::ptr &msg) = 0; // 从缓冲区解析出BaseMessage对象
     virtual std::string serialize(const BaseMessage::ptr &msg) = 0;          // 将BaseMessage序列化为字符串（包含Length和Value）
     virtual bool canProcessed(const BaseBuffer::ptr &buf) = 0;               // 基于LV格式的length字段来检测缓冲区是否包含完整消息
 };
@@ -66,12 +66,12 @@ class BaseServer
 {
 public:
     using ptr = std::shared_ptr<BaseServer>;
-    virtual void setConnectionCallback(const ConnectionCallback &) = 0; // 建立连接时的回调函数
-    virtual void setCloseback(const CloseCallback &) = 0;               // 关闭连接时的回调
-    virtual void setMessageCallback(const MessageCallback &) = 0;       // 收到消息时的回调
-    virtual void start() = 0;                                           // 启动服务端
+    virtual void setConnectionCallback(const ConnectionCallback &conn_cb) { conn_callback_ = conn_cb; } // 建立连接时的回调函数
+    virtual void setCloseback(const CloseCallback &close_cb) { close_callback_ = close_cb; }            // 关闭连接时的回调
+    virtual void setMessageCallback(const MessageCallback &msg_cb) { msg_callback_ = msg_cb; }          // 收到消息时的回调
+    virtual void start() = 0;                                                                           // 启动服务端
 protected:
-    ConnectionCallback con_callback_;
+    ConnectionCallback conn_callback_;
     CloseCallback close_callback_;
     MessageCallback msg_callback_;
 };
@@ -80,16 +80,16 @@ class BaseClient
 {
 public:
     using ptr = std::shared_ptr<BaseClient>;
-    virtual void setConnectionCallback(const ConnectionCallback &) = 0; // 建立连接时的回调函数
-    virtual void setCloseback(const CloseCallback &) = 0;               // 关闭连接时的回调
-    virtual void setMessageCallback(const MessageCallback &) = 0;       // 收到消息时的回调
-    virtual bool connect() = 0;                                         // 建立与服务端的连接
-    virtual bool send(const BaseMessage::ptr &) = 0;                    // 发送消息
-    virtual void shutdown() = 0;                                        // 关闭连接
-    virtual bool connected() = 0;                                       // 检测连接状态
-    virtual BaseConnection::ptr connection() = 0;                       // 获取当前连接对象
+    virtual void setConnectionCallback(const ConnectionCallback &conn_cb) { conn_callback_ = conn_cb; } // 建立连接时的回调函数
+    virtual void setCloseback(const CloseCallback &close_cb) { close_callback_ = close_cb; }            // 关闭连接时的回调
+    virtual void setMessageCallback(const MessageCallback &msg_cb) { msg_callback_ = msg_cb; }          // 收到消息时的回调
+    virtual void connect() = 0;                                                                         // 建立与服务端的连接
+    virtual bool send(const BaseMessage::ptr & msg) = 0;                                                    // 发送消息
+    virtual void shutdown() = 0;                                                                        // 关闭连接
+    virtual bool connected() = 0;                                                                       // 检测连接状态
+    virtual BaseConnection::ptr connection() = 0;                                                       // 获取当前连接对象
 protected:
-    ConnectionCallback con_callback_;
+    ConnectionCallback conn_callback_;
     CloseCallback close_callback_;
     MessageCallback msg_callback_;
 };
