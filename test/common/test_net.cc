@@ -9,10 +9,10 @@
 #include <cstring>
 #include <arpa/inet.h>
 
-#include "net.hpp"
-#include "message.hpp"
-#include "fields.hpp"
-#include "log.hpp"
+#include "../../common/net.hpp"
+#include "../../common/message.hpp"
+#include "../../common/fields.hpp"
+#include "../../common/log.hpp"
 
 using namespace Lyuih;
 

@@ -1,7 +1,7 @@
 #include <iostream>
-#include "../common/log.hpp"
-#include "../common/JsonUtil.hpp"
-#include "../common/uuidUtil.hpp"
+#include "../../common/log.hpp"
+#include "../../common/JsonUtil.hpp"
+#include "../../common/uuidUtil.hpp"
 
 void test_logger(bool flag)
 {

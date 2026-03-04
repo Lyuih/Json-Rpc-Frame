@@ -9,7 +9,7 @@
 
 namespace Lyuih
 {
-    namespace Server
+    namespace server
     {
         class Subscriber
         {
@@ -200,6 +200,7 @@ namespace Lyuih
                         LOG_ERROR("没有该主题");
                         return;
                     }
+                    topic = topic_it->second;
                 }
                 subscriber->removeTopic(topic_req->topic());
                 topic->removeSubscriber(subscriber);
@@ -277,8 +278,12 @@ namespace Lyuih
                     {
                         // 要构造一个订阅者
                         subscriber = std::make_shared<Subscriber>(conn);
+                        subscribers_.insert_or_assign(conn, subscriber);
                     }
-                    subscriber = sub_it->second;
+                    else
+                    {
+                        subscriber = sub_it->second; // 仅在找到时读取
+                    }
                 }
                 // 2. 在主题对象中，新增一个订阅者对象关联的连接；  在订阅者对象中新增一个订阅的主题
                 topic->appendSubscriber(subscriber);

@@ -26,7 +26,7 @@ namespace Lyuih
         public:
             using ptr = std::shared_ptr<ServerDescribe>;
             using ParamsDescribe = std::pair<std::string, VType>;
-            using ServiceCallback = std::function<void(const Json::Value &, const Json::Value &)>;
+            using ServiceCallback = std::function<void(const Json::Value &, Json::Value &)>;
             ServerDescribe(std::string &&method_name, std::vector<ParamsDescribe> &&param_desc, const VType return_type, ServiceCallback &&service_cb)
                 : method_name_(std::move(method_name)), param_desc_(std::move(param_desc)), return_type_(return_type), service_cb_(std::move(service_cb))
             {
@@ -55,7 +55,7 @@ namespace Lyuih
                 }
                 return true;
             }
-            bool call(const Json::Value &param, const Json::Value &ret)
+            bool call(const Json::Value &param, Json::Value &ret)
             {
                 service_cb_(param, ret);
                 if (rTypeCheck(ret) == false)
