@@ -6,6 +6,7 @@
 #include "router.hpp"
 #include "topic.hpp"
 #include "registry.hpp"
+#include "../client/client.hpp"
 
 namespace Lyuih
 {
@@ -15,12 +16,42 @@ namespace Lyuih
         {
         public:
             using ptr = std::shared_ptr<RpcServer>;
-            RpcServer(int port)
-
+            RpcServer(const Address &access_addr, bool enableRegistry = false, const Address &registry_server_addr = Address())
+                : enableRegistry_(enableRegistry), access_addr_(access_addr), router_(std::make_shared<RpcRouter>()), dispatcher_(std::make_shared<Dispatcher>())
             {
+                if (enableRegistry)
+                {
+                    reg_client_ = std::make_shared<client::RegistryClient>(registry_server_addr.first, registry_server_addr.second);
+                }
+                auto rpc_cb = std::bind(&RpcRouter::onRpcRequest, router_.get(),
+                                        std::placeholders::_1, std::placeholders::_2);
+                dispatcher_->registerHandler<RpcRequest>(MType::REQ_RPC, rpc_cb);
+
+                server_ = ServerFactory::create(access_addr.second);
+                auto message_cb = std::bind(&Dispatcher::onMesssage, dispatcher_.get(),
+                                            std::placeholders::_1, std::placeholders::_2);
+                server_->setMessageCallback(message_cb);
+            }
+            void registerMethod(const ServerDescribe::ptr &service)
+            {
+                if (enableRegistry_)
+                {
+                    reg_client_->registryMethod(service->method(), access_addr_);
+                }
+                router_->resisterMethod(service);
+            }
+            void start()
+            {
+                server_->start();
             }
 
         private:
+            bool enableRegistry_;
+            Address access_addr_;
+            client::RegistryClient::ptr reg_client_;
+            RpcRouter::ptr router_;
+            Dispatcher::ptr dispatcher_;
+            BaseServer::ptr server_;
         };
         class TopicServer
         {
