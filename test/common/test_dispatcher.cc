@@ -6,11 +6,11 @@
 #include <thread>
 #include <mutex>
 
-#include "dispatcher.hpp"
-#include "message.hpp"
-#include "fields.hpp"
-#include "log.hpp"
-#include "abstract.hpp"
+#include "../../common/dispatcher.hpp"
+#include "../../common/message.hpp"
+#include "../../common/fields.hpp"
+#include "../../common/log.hpp"
+#include "../../common/abstract.hpp"
 
 using namespace Lyuih;
 

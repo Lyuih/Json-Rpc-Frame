@@ -5,8 +5,8 @@
 #include <vector>
 #include <sstream>
 
-#include "fields.hpp"
-#include "message.hpp"
+#include "../../common/fields.hpp"
+#include "../../common/message.hpp"
 
 using namespace Lyuih;
 
