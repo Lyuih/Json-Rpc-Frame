@@ -60,7 +60,7 @@ namespace Lyuih
             TopicServer(int port)
                 : topic_manager_(std::make_shared<TopicManager>()), dispatcher_(std::make_shared<Dispatcher>())
             {
-                auto topic_cb = std::bind(TopicManager::onTopicRequest, topic_manager_.get(), std::placeholders::_1, std::placeholders::_2);
+                auto topic_cb = std::bind(&TopicManager::onTopicRequest, topic_manager_.get(), std::placeholders::_1, std::placeholders::_2);
                 // 注册到消息分发
                 dispatcher_->registerHandler<TopicRequest>(MType::REQ_TOPIC, topic_cb);
                 server_ = ServerFactory::create(port);
@@ -93,7 +93,7 @@ namespace Lyuih
             RegistryServer(int port)
                 : pd_manager_(std::make_shared<PDManager>()), dispatcher_(std::make_shared<Dispatcher>())
             {
-                auto service_cb = std::bind(PDManager::onServiceRequest, pd_manager_.get(), std::placeholders::_1, std::placeholders::_2);
+                auto service_cb = std::bind(&PDManager::onServiceRequest, pd_manager_.get(), std::placeholders::_1, std::placeholders::_2);
                 // 注册到消息分发
                 dispatcher_->registerHandler<ServiceRequest>(MType::REQ_SERVICE, service_cb);
                 server_ = ServerFactory::create(port);

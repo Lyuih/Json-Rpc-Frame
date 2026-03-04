@@ -26,7 +26,7 @@ namespace Lyuih
             }
             bool remove(const BaseConnection::ptr &conn, const std::string &topic_key)
             {
-                return commonRequest(conn, topic_key, TopicOptype::TOPIC_CREATE);
+                return commonRequest(conn, topic_key, TopicOptype::TOPIC_REMOVE);
             }
             bool subscribe(const BaseConnection::ptr &conn, const std::string &topic_key, const SubCallback &cb)
             {
@@ -46,7 +46,7 @@ namespace Lyuih
             }
             bool publish(const BaseConnection::ptr &conn, const std::string &topic_key, const std::string &msg)
             {
-                return commonRequest(conn, topic_key, TopicOptype::TOPIC_PUBLISH);
+                return commonRequest(conn, topic_key, TopicOptype::TOPIC_PUBLISH,msg);
             }
             // 处理并分发收到的主题消息
             void onPublish(const BaseConnection::ptr &conn, const TopicRequest::ptr &msg)
