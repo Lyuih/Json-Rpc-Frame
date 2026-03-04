@@ -399,6 +399,10 @@ namespace Lyuih
             {
                 return conn_->connected();
             }
+            else
+            {
+                return false;
+            }
         }
         // 获取当前连接对象
         virtual BaseConnection::ptr connection() override
