@@ -32,7 +32,7 @@ namespace Lyuih
                 RequestCallback callback_;                // 请求回调函数，处理请求完成后的回调操作
             };
             // 处理服务器返回的响应，根据rid查找请求描述，调用回调或设置异步结果。
-            void onResponse(const BaseConnection::ptr &conn, BaseMessage::ptr &msg)
+            void onResponse(const BaseConnection::ptr &conn, const BaseMessage::ptr &msg)
             {
                 std::string id = msg->Id();
                 ResquestDescribe::ptr rdb = getDescribe(id);
