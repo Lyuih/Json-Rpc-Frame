@@ -46,8 +46,8 @@ namespace Lyuih
         public:
             using ptr = std::shared_ptr<DiscoveryClient>;
             // 构造函数传入注册中心的地址信息，用于连接注册中心,
-            DiscoveryClient(const std::string &ip, const int port)
-                : requestor_(std::make_shared<Requestor>()), discover_(std::make_shared<Discoverer>()), dispatcher_(std::make_shared<Dispatcher>())
+            DiscoveryClient(const std::string &ip, const int port, const Discoverer::OfflineCallback &cb)
+                : requestor_(std::make_shared<Requestor>()), discover_(std::make_shared<Discoverer>(requestor_, cb)), dispatcher_(std::make_shared<Dispatcher>())
             {
                 auto rsp_cb = std::bind(&Requestor::onResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2);
                 dispatcher_->registerHandler<BaseMessage>(MType::RSP_SERVICE, rsp_cb);
@@ -69,20 +69,15 @@ namespace Lyuih
             Dispatcher::ptr dispatcher_;
             BaseClient::ptr client_;
         };
-        class RpcClient
-        {
-        public:
-            using ptr = std::shared_ptr<RpcClient>;
-
-        private:
-        };
         class TopicClient
         {
         public:
             using ptr = std::shared_ptr<TopicClient>;
             // 初始化主题客户端，连接服务器，注册响应和推送回调。
             TopicClient(const std::string &ip, const int port)
-                : requestor_(std::make_shared<Requestor>()), topic_manager_(std::make_shared<TopicManager>()), dispatcher_(std::make_shared<Dispatcher>())
+                : requestor_(std::make_shared<Requestor>()),
+                  topic_manager_(std::make_shared<TopicManager>(requestor_)),
+                  dispatcher_(std::make_shared<Dispatcher>())
             {
                 auto rsp_cb = std::bind(&Requestor::onResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2);
                 dispatcher_->registerHandler<BaseMessage>(MType::RSP_TOPIC, rsp_cb);
@@ -130,7 +125,10 @@ namespace Lyuih
         public:
             using ptr = std::shared_ptr<RpcClient>;
             RpcClient(bool enableDiscovery, const std::string &ip, int port)
-                : enableDiscovery_(enableDiscovery), requestor_(std::make_shared<Requestor>()), dispatcher_(std::make_shared<Dispatcher>()), caller_(std::make_shared<RpcCaller>())
+                : enableDiscovery_(enableDiscovery),
+                  requestor_(std::make_shared<Requestor>()),
+                  dispatcher_(std::make_shared<Dispatcher>()),
+                  caller_(std::make_shared<RpcCaller>(requestor_))
             {
                 // 针对rpc请求后的响应进行的回调处理
                 auto rsp_cb = std::bind(&Requestor::onResponse, requestor_.get(), std::placeholders::_1, std::placeholders::_2);
@@ -141,7 +139,7 @@ namespace Lyuih
 
                 if (enableDiscovery_)
                 {
-                    auto offline_cb = std::bind(&delClient, this, std::placeholders::_1);
+                    auto offline_cb = std::bind(&RpcClient::delClient, this, std::placeholders::_1);
                     discovery_client_ = std::make_shared<DiscoveryClient>(ip, port, offline_cb);
                 }
                 else
@@ -253,9 +251,11 @@ namespace Lyuih
 
             bool enableDiscovery_;
             DiscoveryClient::ptr discovery_client_;
+
             Requestor::ptr requestor_;
-            RpcCaller::ptr caller_;
             Dispatcher::ptr dispatcher_;
+
+            RpcCaller::ptr caller_;
             BaseClient::ptr rpc_client_; // 用于未启用服务发现
             std::mutex mutex_;
             //<"127.0.0.1:8080", client1>
