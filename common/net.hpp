@@ -54,7 +54,7 @@ namespace Lyuih
         }
 
     private:
-        muduo::net::Buffer *buf_; 
+        muduo::net::Buffer *buf_;
     };
 
     // MuduoBuffer工厂模式
@@ -88,9 +88,18 @@ namespace Lyuih
             int32_t len = buf->readInt32();
             Lyuih::MType m_type = (Lyuih::MType)buf->readInt32();
             int32_t id_len = buf->readInt32();
-            std::string id = buf->retrieveAsString(id_len);
+
             // 2.计算出body长度并提取
             int32_t body_len = len - mtypeFieldsLength - idlenFieldsLength - id_len;
+
+            // 【关键修复】将检查代码移动到这里
+            if (id_len < 0 || body_len < 0 || buf->readableBytes() < (size_t)id_len + (size_t)body_len)
+            {
+                LOG_ERROR("Invalid message length fields. id_len: {}, body_len: {}, readable: {}", id_len, body_len, buf->readableBytes());
+                return false;
+            }
+
+            std::string id = buf->retrieveAsString(id_len);
             std::string body = buf->retrieveAsString(body_len);
             // 3.反序列化到msg
             // a.根据类型创建message对象
@@ -119,18 +128,19 @@ namespace Lyuih
             // 1. 将msg序列化获取消息组主体字符串
             std::string body = msg->serialize();
             // 2.提取必要信息,MType,id
-            int32_t m_type = ::htonl((int32_t)msg->MType());
+            int32_t m_type_net = ::htonl((int32_t)msg->MType());
             std::string id = msg->Id();
             // 3. 计算必要信息:length,idlen,并转化为网络字节序
-            int32_t id_len = ::htonl(id.size());
-            int32_t len = mtypeFieldsLength + idlenFieldsLength + id.size() + body.size();
-            int32_t len_h = ::htonl(len);
+            int32_t id_len_host = id.size();
+            int32_t id_len_net = ::htonl(id_len_host);
+            int32_t len_host = mtypeFieldsLength + idlenFieldsLength + id_len_host + body.size();
+            int32_t len_net = ::htonl(len_host);
             // 4.填充进字符串
             std::string ret;
-            ret.reserve(len + lenFieldsLength); // 扩容
-            ret.append((char *)&len_h, lenFieldsLength);
-            ret.append((char *)&m_type, mtypeFieldsLength);
-            ret.append((char *)&id_len, idlenFieldsLength);
+            ret.reserve(len_host + lenFieldsLength); // 扩容
+            ret.append((char *)&len_net, lenFieldsLength);
+            ret.append((char *)&m_type_net, mtypeFieldsLength);
+            ret.append((char *)&id_len_net, idlenFieldsLength);
             ret.append(id);
             ret.append(body);
             return ret;
@@ -293,6 +303,10 @@ namespace Lyuih
             auto muduo_buffer = BufferFactory::create(buffer);
             for (;;)
             {
+                if (muduo_buffer->readableBytes() == 0)
+                {
+                    break;
+                }
                 if (protocol_->canProcessed(muduo_buffer) == false)
                 {
                     // 防止恶意注入大量数据
@@ -432,6 +446,10 @@ namespace Lyuih
             auto muduo_buffer = BufferFactory::create(buffer);
             for (;;)
             {
+                if (muduo_buffer->readableBytes() == 0)
+                {
+                    break;
+                }
                 if (protocol_->canProcessed(muduo_buffer) == false)
                 {
                     // 防止恶意注入大量数据
